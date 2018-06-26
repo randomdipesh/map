@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	 <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+     <link rel="stylesheet" href="/css/fa.css">
+     <link rel="stylesheet" href="/css/datepicker.css">
+     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" ></script>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.js"></script>
+    <script src="/js/datepicker.js"></script>
+
+    
+	<title>Distance Calculator</title>
+	</head>
+<body>
+
+	<div class="container">
+		<strong>
+			<h3 class="text-center">
+				Distance Calculator
+			</h3>
+		</strong>
+		<br>
+		<form action="" method="post" id="fm">
+			<label for="location">Your Location</label>
+			<input type="text" name="location" id="location" class="form-control" placeholder="Enter your location" required="true">
+			<br>
+			<!-- <label for="dlocation">Enter destination Location</label>
+			<input type="text" name="dlocation" id="dlocation" class="form-control" placeholder="Enter your destination location" required="true">
+			<br> -->
+			<label for="time">Departure Time</label>
+			<div class="row">
+			<div class="col-md-12">
+				<input type="text" name="time" id="time" class="form-control" placeholder="Enter Departure Time" required="true">
+			</div>
+			</div>
+			<br>
+			<label for="type">Transportation Mode</label>
+			<select name="type" id="type" class="form-control">
+				<option value="transit">Transit</option>
+				<option value="driving" selected="true">Driving</option>
+			</select>
+			<br>
+			<input type="submit" value="Calculate Distance" class="btn btn-sm btn-success">
+		</form>
+
+		<br>
+		<div class="row">
+			<div class="col-md-6">
+				<div id="result">
+
+				</div>
+			</div>
+			<div class="col-md-6" >
+				
+				  <div id="map-canvas" style="width: 600px;height: 500px">
+				    
+				</div>
+			</div>
+		</div>
+<script>
+	$("#time").datetimepicker();
+	function initAutocomplete() {
+        autocomplete = new google.maps.places.Autocomplete(
+         (document.getElementById('location')),
+            {types: ['geocode']});
+      	   autocomplete.addListener('place_changed', fillInAddress);
+      	  
+      }
+      function fillInAddress() {
+        var place = autocomplete.getPlace();
+    }
+
+    $("#fm").on('submit',function(e){
+    	$("#result").html('Loading ....')
+    	$("#map-canvas").html("Loading ....")
+    	e.preventDefault()
+    	$.ajax({
+    		url : '/',
+    		type : 'post',
+    		data :  $('#fm').serialize(),
+    		success : function(data){
+    			var type = data.type
+    			var frm = data.location
+    			var dest = data.destination
+    			data = data.data
+    			
+
+    			if(data.status=="ZERO_RESULTS"){
+    				$('#result').html("No Ways Found")
+    			}
+    			else{
+	    				$('#result').html(`
+						
+						<strong>From : ${frm}</strong>
+						<br />
+						<strong>To : Denver International Airport</strong>
+						<br />
+						<strong>Duration in Traffic :</strong> ${data.routes[0].legs[0].duration.text}
+						<br />
+						<strong>Duration : </strong> ${data.routes[0].legs[0].distance.text}
+	    				`)
+	    				
+	    					$("#result").append(``)
+	    					
+
+
+		    				$("#result").append("<br /> <b>Steps</b> <br />")
+		    			data.routes.forEach(d=>{
+		    				d.legs.forEach(ds=>{
+		    					ds.steps.forEach((dz,s)=>{
+		    						$("#result").append(`<strong>Step ${s+1} : </strong> ${dz.html_instructions} <br />`)
+		    					})
+		    				})
+		    			})
+    			}
+    			function initMap() {
+				    var pointA = frm,
+				        pointB = 'Denver International Airport',
+				        myOptions = {
+				            zoom: 7,
+				            center: pointA
+				        },
+				        map = new google.maps.Map(document.getElementById('map-canvas'), myOptions),
+				        // Instantiate a directions service.
+				        directionsService = new google.maps.DirectionsService,
+				        directionsDisplay = new google.maps.DirectionsRenderer({
+				            map: map
+				        }),
+				        markerA = new google.maps.Marker({
+				            position: pointA,
+				            title: "point A",
+				            label: "A",
+				            map: map
+				        }),
+				        markerB = new google.maps.Marker({
+				            position: pointB,
+				            title: "point B",
+				            label: "B",
+				            map: map
+				        });
+
+				    // get route from A to B
+				    calculateAndDisplayRoute(directionsService, directionsDisplay, pointA, pointB);
+
+				}
+
+
+				function calculateAndDisplayRoute(directionsService, directionsDisplay, pointA, pointB) {
+				    directionsService.route({
+				        origin: pointA,
+				        destination: pointB,
+				        avoidTolls: true,
+				        avoidHighways: false,
+				        travelMode: google.maps.TravelMode.DRIVING
+				    }, function (response, status) {
+				        if (status == google.maps.DirectionsStatus.OK) {
+				            directionsDisplay.setDirections(response);
+				        } else {
+				            window.alert('Directions request failed due to ' + status);
+				        }
+				    });
+				}
+
+				initMap();
+
+
+    
+    			console.log(data)
+    		}
+    	})
+
+    })
+</script>
+ <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyADzP_y5pQslgQTFSlghUniyo_7oy7bA0A&libraries=places&callback=initAutocomplete"></script>
+<script>
+	
+
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	</div>
+
+</body>
+
+
+</html>
